@@ -282,6 +282,12 @@ struct interface {
 	char ptm_enable; /* Should we look at ptm_status ? */
 	char ptm_status;
 
+	/* PROXY-ARP */
+	uint8_t proxy_arp_enable;
+	
+	/* ICMP redirects */
+	uint8_t redirects_enable;
+
 /* Statistics fileds. */
 #ifdef HAVE_PROC_NET_DEV
 	struct if_stats stats;

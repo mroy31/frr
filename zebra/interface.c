@@ -20,6 +20,9 @@
  */
 
 #include <zebra.h>
+//EL
+#include "ipforward.h"
+//EL
 
 #include "if.h"
 #include "lib_errors.h"
@@ -2924,6 +2927,25 @@ static int ip_address_install(struct vty *vty, struct interface *ifp,
 	struct prefix_ipv4 *p;
 	int ret;
 	enum zebra_dplane_result dplane_res;
+	char proc_set[150];
+
+	// Set by proxy arp by default
+	sprintf(proc_set, "/proc/sys/net/ipv4/conf/all/proxy_arp");
+	ret = ipproxyarp_on(proc_set);
+		
+	if (ret != 1) 
+		fprintf(stderr, "Can't turn on default IP proxy arp configuration\n");
+	else
+		ifp->proxy_arp_enable = 1;
+
+	// Set by icmp redirects by default
+	sprintf(proc_set, "/proc/sys/net/ipv4/conf/all/accept_redirects");
+	ret = ipredirects_on(proc_set);
+		
+	if (ret != 1)
+		fprintf(stderr, "Can't turn on default ICMP redirects configuration\n");
+	else
+		ifp->redirects_enable = 1;
 
 	if_data = ifp->info;
 
@@ -3143,6 +3165,153 @@ DEFUN (no_ip_address,
 	return ip_address_uninstall(vty, ifp, argv[idx_ipv4_prefixlen]->arg,
 				    NULL, NULL);
 }
+
+//BEGIN EL 
+DEFUN (ip_proxy_arp,
+       ip_proxy_arp_cmd,
+       "ip proxy-arp",
+       IP_STR
+       "Turn on PROXY-ARP\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	vty_out(vty, "/proc/sys/net/ipv4/conf/%s/proxy_arp\n", ifp->name);
+	
+	char proc_proxy_arp[150];
+	sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/%s/proxy_arp", ifp->name);
+
+	int ret;
+
+	ret = ipproxyarp(proc_proxy_arp);
+	if (ret != 1)
+		ret = ipproxyarp_on(proc_proxy_arp);
+
+	if (ret != 1) {
+
+		sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/all/proxy_arp");
+		ret = ipproxyarp_on(proc_proxy_arp);
+		
+		if (ret != 1) {
+			vty_out(vty, "Can't turn on IP proxy arp\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		} else {
+			vty_out(vty, "Turn on IP proxy arp for all interfaces\n");
+		}
+	}
+	
+	ifp->proxy_arp_enable = 1;
+	
+	return CMD_SUCCESS;
+}
+
+DEFUN (no_ip_proxy_arp,
+       no_ip_proxy_arp_cmd,
+       "no ip proxy-arp",
+       NO_STR
+       IP_STR
+       "Turn off IP PROXY-ARP\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	
+	char proc_proxy_arp[150];
+	sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/%s/proxy_arp", ifp->name);
+
+	int ret;
+
+	ret = ipproxyarp(proc_proxy_arp);
+	if (ret != 0)
+		ret = ipproxyarp_off(proc_proxy_arp);
+
+	if (ret != 0) {
+
+		sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/all/proxy_arp");
+		ret = ipproxyarp_off(proc_proxy_arp);
+		
+		if (ret != 0) {
+			vty_out(vty, "Can't turn off IP proxy arp\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		} else {
+			vty_out(vty, "Turn off IP proxy arp for all interfaces\n");
+		}
+	}
+
+	ifp->proxy_arp_enable = 0;
+
+	return CMD_SUCCESS;
+}
+
+DEFUN (ip_redirects,
+       ip_redirects_cmd,
+       "ip redirects",
+       IP_STR
+       "Turn on ICMP redirects\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	vty_out(vty, "/proc/sys/net/ipv4/conf/%s/accept_redirects\n", ifp->name);
+	
+	char proc_redirects[150];
+	sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/%s/accept_redirects", ifp->name);
+
+	int ret;
+
+	ret = ipredirects(proc_redirects);
+	if (ret != 1)
+		ret = ipredirects_on(proc_redirects);
+
+	if (ret != 1) {
+
+		sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/all/accept_redirects");
+		ret = ipredirects_on(proc_redirects);
+		
+		if (ret != 1) {
+			vty_out(vty, "Can't turn on ICMP redirects\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		} else {
+			vty_out(vty, "Turn on ICMP redirects for all interfaces\n");
+		}
+	}
+	
+	ifp->redirects_enable = 1;
+	
+	return CMD_SUCCESS;
+}
+
+DEFUN (no_ip_redirects,
+       no_ip_redirects_cmd,
+       "no ip redirects",
+       NO_STR
+       IP_STR
+       "Turn off ICMP redirects\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	
+	char proc_redirects[150];
+	sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/%s/accept_redirects", ifp->name);
+
+	int ret;
+
+	ret = ipredirects(proc_redirects);
+	if (ret != 0)
+		ret = ipredirects_off(proc_redirects);
+
+	if (ret != 0) {
+
+		sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/all/accept_redirects");
+		ret = ipredirects_off(proc_redirects);
+		
+		if (ret != 0) {
+			vty_out(vty, "Can't turn off ICMP redirects\n");
+			return CMD_WARNING_CONFIG_FAILED;
+		} else {
+			vty_out(vty, "Turn off ICMP redirects for all interfaces\n");
+		}
+	}
+
+	ifp->redirects_enable = 0;
+
+	return CMD_SUCCESS;
+}
+//END EL
+
 
 DEFUN(ip_address_peer,
       ip_address_peer_cmd,
@@ -3510,6 +3679,10 @@ static int if_config_write(struct vty *vty)
 				vty_frame(vty, "interface %s vrf %s\n",
 					  ifp->name, vrf->name);
 
+			/* PROXY-ARP */
+			if (ifp->proxy_arp_enable == 0)
+				vty_out(vty, " no ip proxy-arp\n");
+
 			if (if_data) {
 				if (if_data->shutdown == IF_ZEBRA_SHUTDOWN_ON)
 					vty_out(vty, " shutdown\n");
@@ -3613,6 +3786,10 @@ void zebra_if_init(void)
 	install_element(INTERFACE_NODE, &no_bandwidth_if_cmd);
 	install_element(INTERFACE_NODE, &ip_address_cmd);
 	install_element(INTERFACE_NODE, &no_ip_address_cmd);
+	install_element(INTERFACE_NODE, &ip_proxy_arp_cmd);
+	install_element(INTERFACE_NODE, &no_ip_proxy_arp_cmd);
+	install_element(INTERFACE_NODE, &ip_redirects_cmd);
+	install_element(INTERFACE_NODE, &no_ip_redirects_cmd);
 	install_element(INTERFACE_NODE, &ip_address_peer_cmd);
 	install_element(INTERFACE_NODE, &no_ip_address_peer_cmd);
 	install_element(INTERFACE_NODE, &ipv6_address_cmd);

@@ -181,4 +181,138 @@ int ipforward_ipv6_off(void)
 	return ipforward_ipv6();
 }
 
+int ipproxyarp(char proc_proxy_arp[])
+{
+	int ret = 0;
+	FILE *fp;
+	char buf[5];
+	int ipproxyarp = 0;
+
+	fp = fopen(proc_proxy_arp, "r");
+
+	if (fp == NULL)
+		return -1;
+
+	if (fgets(buf, 2, fp))
+		ret = sscanf(buf, "%d", &ipproxyarp);
+
+	fclose(fp);
+
+	if (ret != 1)
+		return 0;
+
+	return ipproxyarp;
+}
+
+int ipproxyarp_on(char proc_proxy_arp[])
+{
+	FILE *fp;
+
+	frr_with_privs(&zserv_privs) {
+
+		fp = fopen(proc_proxy_arp, "w");
+
+		if (fp == NULL) {
+			return -1;
+		}
+
+		fprintf(fp, "1\n");
+
+		fclose(fp);
+
+	}
+
+	return ipproxyarp(proc_proxy_arp);
+}
+
+
+int ipproxyarp_off(char proc_proxy_arp[])
+{
+	FILE *fp;
+
+	frr_with_privs(&zserv_privs) {
+
+		fp = fopen(proc_proxy_arp, "w");
+
+		if (fp == NULL) {
+			return -1;
+		}
+
+		fprintf(fp, "0\n");
+
+		fclose(fp);
+
+	}
+
+	return ipproxyarp(proc_proxy_arp);
+}
+
+int ipredirects(char proc_redirects[])
+{
+	int ret = 0;
+	FILE *fp;
+	char buf[5];
+	int ipredirects = 0;
+
+	fp = fopen(proc_redirects, "r");
+
+	if (fp == NULL)
+		return -1;
+
+	if (fgets(buf, 2, fp))
+		ret = sscanf(buf, "%d", &ipredirects);
+
+	fclose(fp);
+
+	if (ret != 1)
+		return 0;
+
+	return ipredirects;
+}
+
+int ipredirects_on(char proc_redirects[])
+{
+	FILE *fp;
+
+	frr_with_privs(&zserv_privs) {
+
+		fp = fopen(proc_redirects, "w");
+
+		if (fp == NULL) {
+			return -1;
+		}
+
+		fprintf(fp, "1\n");
+
+		fclose(fp);
+
+	}
+
+	return ipredirects(proc_redirects);
+}
+
+
+int ipredirects_off(char proc_redirects[])
+{
+	FILE *fp;
+
+	frr_with_privs(&zserv_privs) {
+
+		fp = fopen(proc_redirects, "w");
+
+		if (fp == NULL) {
+			return -1;
+		}
+
+		fprintf(fp, "0\n");
+
+		fclose(fp);
+
+	}
+
+	return ipredirects(proc_redirects);
+}
+
+
+
 #endif /* GNU_LINUX */

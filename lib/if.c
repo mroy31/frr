@@ -170,6 +170,14 @@ static struct interface *if_new(vrf_id_t vrf_id)
 	ifp->nbr_connected = list_new();
 	ifp->nbr_connected->del = (void (*)(void *))nbr_connected_free;
 
+	/* PROXY-ARP */
+	//popen("sysctl -w net.ipv4.conf.all.proxy_arp=1","r");
+	ifp->proxy_arp_enable = 0;
+
+	/* ICMP redirects */
+	//popen("sysctl -w net.ipv4.conf.all.accept_redirects=1","r");
+	ifp->redirects_enable = 0;
+
 	/* Enable Link-detection by default */
 	SET_FLAG(ifp->status, ZEBRA_INTERFACE_LINKDETECTION);
 

@@ -33,6 +33,14 @@ extern int ipforward_ipv6(void);
 extern int ipforward_ipv6_on(void);
 extern int ipforward_ipv6_off(void);
 
+extern int ipproxyarp(char proc_proxy_arp[]);
+extern int ipproxyarp_on(char proc_proxy_arp[]);
+extern int ipproxyarp_off(char proc_proxy_arp[]);
+
+extern int ipredirects(char proc_redirects[]);
+extern int ipredirects_on(char proc_redirects[]);
+extern int ipredirects_off(char proc_redirects[]);
+
 #ifdef __cplusplus
 }
 #endif

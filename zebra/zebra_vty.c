@@ -3202,7 +3202,7 @@ DEFUN (show_zebra,
 
 DEFUN (ip_forwarding,
        ip_forwarding_cmd,
-       "ip forwarding",
+       "ip routing",
        IP_STR
        "Turn on IP forwarding\n")
 {
@@ -3222,7 +3222,7 @@ DEFUN (ip_forwarding,
 
 DEFUN (no_ip_forwarding,
        no_ip_forwarding_cmd,
-       "no ip forwarding",
+       "no ip routing",
        NO_STR
        IP_STR
        "Turn off IP forwarding\n")
@@ -3291,7 +3291,7 @@ DEFUN (show_ipv6_forwarding,
 
 DEFUN (ipv6_forwarding,
        ipv6_forwarding_cmd,
-       "ipv6 forwarding",
+       "ipv6 routing",
        IPV6_STR
        "Turn on IPv6 forwarding\n")
 {
@@ -3311,7 +3311,7 @@ DEFUN (ipv6_forwarding,
 
 DEFUN (no_ipv6_forwarding,
        no_ipv6_forwarding_cmd,
-       "no ipv6 forwarding",
+       "no ipv6 routing",
        NO_STR
        IPV6_STR
        "Turn off IPv6 forwarding\n")
@@ -3427,9 +3427,9 @@ static int config_write_forwarding(struct vty *vty)
 	router_id_write(vty);
 
 	if (!ipforward())
-		vty_out(vty, "no ip forwarding\n");
-	if (!ipforward_ipv6())
-		vty_out(vty, "no ipv6 forwarding\n");
+		vty_out(vty, "no ip routing\n");
+	if (ipforward_ipv6())
+		vty_out(vty, "ipv6 routing\n");
 	vty_out(vty, "!\n");
 	return 0;
 }

@@ -53,10 +53,18 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
 	&& apk add \
 		--no-cache \
 		--update-cache \
-		tini \
+		htop net-tools tcpdump less vim iputils procps python3 shadow\
 	&& apk add \
 		--no-cache \
 		--allow-untrusted /pkgs/apk/*/*.apk \
 	&& rm -rf /pkgs
-COPY docker/alpine/docker-start /usr/lib/frr/docker-start
-ENTRYPOINT [ "/sbin/tini", "--", "/usr/lib/frr/docker-start" ]
+# configure FRR
+COPY docker/alpine/conf/frr.conf /etc/frr
+COPY docker/alpine/conf/daemons /etc/frr
+RUN touch /etc/frr/vtysh.conf
+RUN chown -R frr:frr /etc/frr
+RUN chown frr:frr /var/run/frr
+
+COPY docker/alpine/iinit.py /usr/bin/
+RUN chmod +x /usr/bin/iinit.py
+CMD ["/usr/bin/iinit.py"]

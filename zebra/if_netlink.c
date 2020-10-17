@@ -866,6 +866,7 @@ int kernel_interface_set_master(struct interface *master,
 				struct interface *slave)
 {
 	struct zebra_ns *zns = zebra_ns_lookup(NS_DEFAULT);
+	ifindex_t master_ifindex = 0;
 
 	struct {
 		struct nlmsghdr n;
@@ -882,7 +883,9 @@ int kernel_interface_set_master(struct interface *master,
 
 	req.ifa.ifi_index = slave->ifindex;
 
-	addattr_l(&req.n, sizeof(req), IFLA_MASTER, &master->ifindex, 4);
+	if (master != NULL)
+		master_ifindex = master->ifindex;
+	addattr_l(&req.n, sizeof(req), IFLA_MASTER, &master_ifindex, 4);
 	addattr_l(&req.n, sizeof(req), IFLA_LINK, &slave->ifindex, 4);
 
 	return netlink_talk(netlink_talk_filter, &req.n, &zns->netlink_cmd, zns,

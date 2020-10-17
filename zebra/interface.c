@@ -2932,8 +2932,8 @@ static int ip_address_install(struct vty *vty, struct interface *ifp,
 	// Set by proxy arp by default
 	sprintf(proc_set, "/proc/sys/net/ipv4/conf/all/proxy_arp");
 	ret = ipproxyarp_on(proc_set);
-		
-	if (ret != 1) 
+
+	if (ret != 1)
 		fprintf(stderr, "Can't turn on default IP proxy arp configuration\n");
 	else
 		ifp->proxy_arp_enable = 1;
@@ -2941,7 +2941,7 @@ static int ip_address_install(struct vty *vty, struct interface *ifp,
 	// Set by icmp redirects by default
 	sprintf(proc_set, "/proc/sys/net/ipv4/conf/all/accept_redirects");
 	ret = ipredirects_on(proc_set);
-		
+
 	if (ret != 1)
 		fprintf(stderr, "Can't turn on default ICMP redirects configuration\n");
 	else
@@ -3166,7 +3166,7 @@ DEFUN (no_ip_address,
 				    NULL, NULL);
 }
 
-//BEGIN EL 
+//BEGIN EL
 DEFUN (ip_proxy_arp,
        ip_proxy_arp_cmd,
        "ip proxy-arp",
@@ -3175,7 +3175,7 @@ DEFUN (ip_proxy_arp,
 {
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	vty_out(vty, "/proc/sys/net/ipv4/conf/%s/proxy_arp\n", ifp->name);
-	
+
 	char proc_proxy_arp[150];
 	sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/%s/proxy_arp", ifp->name);
 
@@ -3189,7 +3189,7 @@ DEFUN (ip_proxy_arp,
 
 		sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/all/proxy_arp");
 		ret = ipproxyarp_on(proc_proxy_arp);
-		
+
 		if (ret != 1) {
 			vty_out(vty, "Can't turn on IP proxy arp\n");
 			return CMD_WARNING_CONFIG_FAILED;
@@ -3197,9 +3197,9 @@ DEFUN (ip_proxy_arp,
 			vty_out(vty, "Turn on IP proxy arp for all interfaces\n");
 		}
 	}
-	
+
 	ifp->proxy_arp_enable = 1;
-	
+
 	return CMD_SUCCESS;
 }
 
@@ -3211,7 +3211,7 @@ DEFUN (no_ip_proxy_arp,
        "Turn off IP PROXY-ARP\n")
 {
 	VTY_DECLVAR_CONTEXT(interface, ifp);
-	
+
 	char proc_proxy_arp[150];
 	sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/%s/proxy_arp", ifp->name);
 
@@ -3225,7 +3225,7 @@ DEFUN (no_ip_proxy_arp,
 
 		sprintf(proc_proxy_arp, "/proc/sys/net/ipv4/conf/all/proxy_arp");
 		ret = ipproxyarp_off(proc_proxy_arp);
-		
+
 		if (ret != 0) {
 			vty_out(vty, "Can't turn off IP proxy arp\n");
 			return CMD_WARNING_CONFIG_FAILED;
@@ -3247,7 +3247,7 @@ DEFUN (ip_redirects,
 {
 	VTY_DECLVAR_CONTEXT(interface, ifp);
 	vty_out(vty, "/proc/sys/net/ipv4/conf/%s/accept_redirects\n", ifp->name);
-	
+
 	char proc_redirects[150];
 	sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/%s/accept_redirects", ifp->name);
 
@@ -3261,7 +3261,7 @@ DEFUN (ip_redirects,
 
 		sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/all/accept_redirects");
 		ret = ipredirects_on(proc_redirects);
-		
+
 		if (ret != 1) {
 			vty_out(vty, "Can't turn on ICMP redirects\n");
 			return CMD_WARNING_CONFIG_FAILED;
@@ -3269,9 +3269,9 @@ DEFUN (ip_redirects,
 			vty_out(vty, "Turn on ICMP redirects for all interfaces\n");
 		}
 	}
-	
+
 	ifp->redirects_enable = 1;
-	
+
 	return CMD_SUCCESS;
 }
 
@@ -3283,7 +3283,7 @@ DEFUN (no_ip_redirects,
        "Turn off ICMP redirects\n")
 {
 	VTY_DECLVAR_CONTEXT(interface, ifp);
-	
+
 	char proc_redirects[150];
 	sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/%s/accept_redirects", ifp->name);
 
@@ -3297,7 +3297,7 @@ DEFUN (no_ip_redirects,
 
 		sprintf(proc_redirects, "/proc/sys/net/ipv4/conf/all/accept_redirects");
 		ret = ipredirects_off(proc_redirects);
-		
+
 		if (ret != 0) {
 			vty_out(vty, "Can't turn off ICMP redirects\n");
 			return CMD_WARNING_CONFIG_FAILED;
@@ -3311,6 +3311,58 @@ DEFUN (no_ip_redirects,
 	return CMD_SUCCESS;
 }
 //END EL
+
+// BEGIN MR
+DEFUN (vrf_install_if,
+       vrf_install_if_cmd,
+       "ip vrf NAME",
+       IP_STR
+       "Add this interface in the vrf NAME\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	vrf_id_t vrf_id;
+	char vrf_name[128];
+	struct interface *master_ifp = NULL;
+
+	snprintf(vrf_name, sizeof(vrf_name), argv[2]->arg);
+	VRF_GET_ID(vrf_id, vrf_name, false);
+
+	zlog_debug("ENAC: Interface %s change to VRF %s", ifp->name, vrf_name);
+	if (vrf_id != VRF_DEFAULT) {
+		master_ifp = if_lookup_by_name_all_vrf(vrf_name);
+		if (!master_ifp) {
+			vty_out(vty, "%% Unable to find vrf interface %s \n", vrf_name);
+			return CMD_WARNING_CONFIG_FAILED;
+		}
+	}
+	kernel_interface_set_master(master_ifp, ifp);
+	if_handle_vrf_change(ifp, vrf_id);
+
+	return CMD_SUCCESS;
+}
+
+DEFUN (no_vrf_install_if,
+       no_vrf_install_if_cmd,
+       "no ip vrf NAME",
+       IP_STR
+       "Remove this interface from the vrf NAME\n")
+{
+	VTY_DECLVAR_CONTEXT(interface, ifp);
+	vrf_id_t vrf_id;
+	char vrf_name[128];
+
+	snprintf(vrf_name, sizeof(vrf_name), argv[3]->arg);
+	VRF_GET_ID(vrf_id, vrf_name, false);
+
+	if (ifp->vrf_id == vrf_id && vrf_id != VRF_DEFAULT) {
+		zlog_debug("ENAC: Interface %s change to VRF default", ifp->name);
+		kernel_interface_set_master(NULL, ifp);
+		if_handle_vrf_change(ifp, vrf_id);
+	}
+
+	return CMD_SUCCESS;
+}
+// END MR
 
 
 DEFUN(ip_address_peer,
@@ -3673,11 +3725,14 @@ static int if_config_write(struct vty *vty)
 			if_data = ifp->info;
 			vrf = vrf_lookup_by_id(ifp->vrf_id);
 
-			if (ifp->vrf_id == VRF_DEFAULT)
-				vty_frame(vty, "interface %s\n", ifp->name);
-			else
-				vty_frame(vty, "interface %s vrf %s\n",
-					  ifp->name, vrf->name);
+			// Do not show interface of type vrf in the config
+			if (strcmp(vrf->name, ifp->name) == 0)
+				continue;
+
+			vty_frame(vty, "interface %s\n", ifp->name);
+			if (ifp->vrf_id != VRF_DEFAULT) {
+				vty_out(vty, " ip vrf %s\n", vrf->name);
+			}
 
 			/* PROXY-ARP */
 			if (ifp->proxy_arp_enable == 0)
@@ -3794,6 +3849,8 @@ void zebra_if_init(void)
 	install_element(INTERFACE_NODE, &no_ip_address_peer_cmd);
 	install_element(INTERFACE_NODE, &ipv6_address_cmd);
 	install_element(INTERFACE_NODE, &no_ipv6_address_cmd);
+	install_element(INTERFACE_NODE, &vrf_install_if_cmd);
+	install_element(INTERFACE_NODE, &no_vrf_install_if_cmd);
 #ifdef HAVE_NETLINK
 	install_element(INTERFACE_NODE, &ip_address_label_cmd);
 	install_element(INTERFACE_NODE, &no_ip_address_label_cmd);

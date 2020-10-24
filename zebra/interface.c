@@ -3735,7 +3735,9 @@ static int if_config_write(struct vty *vty)
 			}
 
 			/* PROXY-ARP */
-			if (ifp->proxy_arp_enable == 0)
+			if (ifp->proxy_arp_enable == 0
+					&& if_data->zif_type != ZEBRA_IF_MACVLAN
+					&& strcmp(ifp->name, "lo") != 0)
 				vty_out(vty, " no ip proxy-arp\n");
 
 			if (if_data) {

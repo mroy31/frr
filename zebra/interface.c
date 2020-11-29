@@ -3385,7 +3385,7 @@ DEFUN (no_vrf_install_if,
 	if (ifp->vrf_id == vrf_id && vrf_id != VRF_DEFAULT) {
 		zlog_debug("ENAC: Interface %s change to VRF default", ifp->name);
 		kernel_interface_set_master(NULL, ifp);
-		if_handle_vrf_change(ifp, vrf_id);
+		if_handle_vrf_change(ifp, VRF_DEFAULT);
 	}
 
 	return CMD_SUCCESS;

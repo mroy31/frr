@@ -64,7 +64,10 @@ COPY docker/alpine/conf/daemons /etc/frr
 RUN touch /etc/frr/vtysh.conf
 RUN chown -R frr:frr /etc/frr
 RUN chown frr:frr /var/run/frr
+RUN mkdir -p /var/log/frr
+RUN chown frr:frr /var/log/frr
 
+# Install iinit file
 COPY docker/alpine/iinit.py /usr/bin/
 RUN chmod +x /usr/bin/iinit.py
 CMD ["/usr/bin/iinit.py"]

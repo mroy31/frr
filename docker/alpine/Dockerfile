@@ -53,7 +53,7 @@ RUN echo 'http://dl-cdn.alpinelinux.org/alpine/edge/testing' >> /etc/apk/reposit
 	&& apk add \
 		--no-cache \
 		--update-cache \
-		htop net-tools tcpdump less vim iputils procps python3 shadow\
+		htop net-tools tcpdump less vim iputils procps python3 shadow ethtool \
 	&& apk add \
 		--no-cache \
 		--allow-untrusted /pkgs/apk/*/*.apk \
